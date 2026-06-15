@@ -1,0 +1,48 @@
+{
+  "id": "dnd-shops",
+  "title": "D&D Shops: RPG Interactive Markets",
+  "description": "An RPG-inspired interactive shop interface for the D&D5e system in Foundry VTT.",
+  "version": "0.5.0",
+  "compatibility": {
+    "minimum": "13.347",
+    "verified": "14"
+  },
+  "authors": [
+    {
+      "name": "Codex"
+    }
+  ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "dnd5e",
+        "type": "system",
+        "compatibility": {
+          "minimum": "5.0.0",
+          "verified": "5.3.3"
+        }
+      }
+    ]
+  },
+  "esmodules": [
+    "scripts/dnd-shops.mjs"
+  ],
+  "styles": [
+    "styles/dnd-shops.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "es",
+      "name": "Español",
+      "path": "lang/es.json"
+    }
+  ],
+  "manifest": "",
+  "download": "",
+  "url": ""
+}

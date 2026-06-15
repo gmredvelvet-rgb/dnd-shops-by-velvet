@@ -1,0 +1,339 @@
+{{#if unlicensed}}
+<div class="dnd-shops-shell dnd-shops-unlicensed-screen">
+  <div class="dnd-shops-unlock-wrap">
+    <div class="dnd-shops-unlock-icon">🏪</div>
+    <h2 class="dnd-shops-unlock-title">D&amp;D Shops</h2>
+    <p class="dnd-shops-unlock-msg">
+      Connect your Patreon account to unlock the interactive shop.
+    </p>
+    <button type="button" id="dnd-shops-unlock-btn" class="dnd-shops-unlock-btn">
+      <i class="fa-brands fa-patreon"></i>
+      Connect Patreon
+    </button>
+  </div>
+</div>
+{{else}}
+<div class="dnd-shops-shell" data-mode="{{mode}}" data-theme="{{theme}}">
+
+  {{!-- ── SCAN LINES OVERLAY ──────────────────────────────────────── --}}
+  <div class="dnd-shops-scanlines" aria-hidden="true"></div>
+  <div class="dnd-shops-vignette" aria-hidden="true"></div>
+
+  {{!-- ── LEFT SIDEBAR ─────────────────────────────────────────────── --}}
+  <aside class="dnd-shops-sidebar">
+
+    {{!-- Brand --}}
+    <header class="dnd-shops-brand">
+      <div class="dnd-shops-kicker">
+        <span class="kicker-dot"></span>
+        {{shop.subtitle}}
+        <span class="kicker-dot"></span>
+      </div>
+      <h1 class="dnd-shops-title">
+        <span class="title-word">{{shop.name}}</span>
+      </h1>
+      <div class="dnd-shops-meta">
+        <div class="meta-chip">
+          <i class="fa-solid fa-location-dot"></i>
+          <span>{{shop.district}}</span>
+        </div>
+        <div class="meta-chip">
+          <i class="fa-solid fa-star"></i>
+          <span>{{stars}}</span>
+        </div>
+      </div>
+    </header>
+
+    {{!-- Keeper --}}
+    <div class="dnd-shops-keeper">
+      <div class="keeper-avatar-wrap">
+        <img class="keeper-avatar" src="{{shop.keeperAvatar}}" alt="{{shop.keeper}}" />
+        <div class="keeper-ping"></div>
+      </div>
+      <div class="keeper-speech">
+        <div class="keeper-name">{{shop.keeper}}</div>
+        <p class="keeper-line">"{{shop.keeperLine}}"</p>
+        <p class="keeper-hint">⚠ {{shop.keeperHint}}</p>
+      </div>
+    </div>
+
+    {{!-- Actor Selector --}}
+    <div class="dnd-shops-actor-wrap">
+      <label class="dnd-shops-field-label">
+        <i class="fa-solid fa-user"></i>
+        {{localize "DNDSHOPS.Actor"}}
+      </label>
+      <div class="dnd-shops-select-wrap">
+        <select name="actor" class="dnd-shops-select">
+          {{#each actors}}
+          <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+          {{/each}}
+        </select>
+        <i class="fa-solid fa-chevron-down select-arrow"></i>
+      </div>
+    </div>
+
+    {{!-- Mode Tabs --}}
+    <div class="dnd-shops-tabs">
+      <button type="button" class="dnd-shop-tab {{#if buyMode}}is-active{{/if}}" data-mode="buy">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <span>{{localize "DNDSHOPS.Buy"}}</span>
+      </button>
+      <button type="button" class="dnd-shop-tab {{#if sellMode}}is-active{{/if}}" data-mode="sell">
+        <i class="fa-solid fa-coins"></i>
+        <span>{{localize "DNDSHOPS.Sell"}}</span>
+      </button>
+    </div>
+
+    {{!-- Theme Selector --}}
+    <div class="dnd-shops-theme-wrap">
+      <div class="dnd-shops-field-label">
+        <i class="fa-solid fa-palette"></i>
+        {{localize "DNDSHOPS.Theme"}}
+      </div>
+      <div class="dnd-shops-theme-btns">
+        {{#each themeOptions}}
+        <button type="button"
+          class="dnd-shops-theme-btn {{#if selected}}is-active{{/if}}"
+          data-theme="{{id}}"
+          title="{{label}}">
+          <span class="theme-btn-icon theme-icon-{{id}}"></span>
+          <span class="theme-btn-label">{{label}}</span>
+        </button>
+        {{/each}}
+      </div>
+    </div>
+
+    {{#if isGM}}
+    <div class="dnd-shops-gm-tools">
+      <button type="button" class="dnd-shops-import-json">
+        <i class="fa-solid fa-file-import"></i>
+        <span>{{localize "DNDSHOPS.ImportJson"}}</span>
+      </button>
+      <input class="dnd-shops-import-input" type="file" accept=".json,application/json" multiple hidden />
+    </div>
+    {{/if}}
+
+    {{!-- Categories (buy mode) --}}
+    {{#if buyMode}}
+    <nav class="dnd-shop-categories" aria-label="Shop categories">
+      <div class="dnd-shops-nav-label">&rsaquo;&rsaquo; {{localize "DNDSHOPS.PickCategory"}}</div>
+      {{#each categories}}
+      <button type="button"
+        class="dnd-shop-category {{#if selected}}is-active{{/if}}"
+        data-category="{{id}}"
+        style="--cat-color: {{color}}">
+        <span class="cat-code">{{code}}</span>
+        <i class="cat-icon {{icon}}"></i>
+        <b class="cat-label">{{label}}</b>
+        <em class="cat-kana">{{kana}}</em>
+        <span class="cat-tag">{{tag}}</span>
+        <span class="cat-glow" aria-hidden="true"></span>
+      </button>
+      {{/each}}
+    </nav>
+    {{/if}}
+
+    {{!-- Sell note --}}
+    {{#if sellMode}}
+    <div class="dnd-shops-sell-note">
+      <i class="fa-solid fa-arrow-right-arrow-left"></i>
+      <div>
+        <strong>SELL MODE</strong>
+        <span>{{sellPercent}}% {{localize "DNDSHOPS.SellPercent"}} · no receipts</span>
+      </div>
+    </div>
+    {{/if}}
+
+    {{!-- Wallet --}}
+    <div class="dnd-shops-wallet">
+      <i class="fa-solid fa-wallet"></i>
+      <div class="wallet-body">
+        <span class="wallet-label">{{localize "DNDSHOPS.Wallet"}}</span>
+        <b class="wallet-amount">{{wallet}}</b>
+      </div>
+    </div>
+
+  </aside>
+
+  {{!-- ── CENTER PANEL ──────────────────────────────────────────────── --}}
+  <section class="dnd-shops-panel">
+    <header class="dnd-shops-panel-head">
+      <div class="panel-head-left">
+        <span class="panel-code">{{activeCode}}</span>
+        <h2 class="panel-title">{{activeTitle}}</h2>
+      </div>
+      <p class="panel-hint">
+        <kbd>↑↓</kbd> nav &nbsp;·&nbsp; <kbd>Enter</kbd> add &nbsp;·&nbsp;
+        <span class="panel-count">{{resultCount}} items</span>
+      </p>
+    </header>
+
+    <div class="dnd-shops-search">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input
+        class="dnd-shops-search-input"
+        type="search"
+        value="{{query}}"
+        placeholder="{{localize "DNDSHOPS.Search"}}"
+        autocomplete="off"
+      />
+      {{#if query}}<button type="button" class="dnd-shops-search-clear"><i class="fa-solid fa-xmark"></i></button>{{/if}}
+    </div>
+
+    <div class="dnd-shops-market">
+
+      {{!-- Item List --}}
+      <div class="dnd-shops-list" tabindex="0">
+        {{#each listing}}
+        <button type="button"
+          class="dnd-shop-item {{#if selected}}is-active{{/if}}"
+          data-id="{{id}}"
+          title="{{name}} — {{priceLabel}}">
+          <span class="item-index">{{add index 1}}</span>
+          <span class="item-img-wrap">
+            <img class="item-img" src="{{img}}" alt="" loading="lazy" />
+          </span>
+          <span class="item-body">
+            <strong class="item-name">{{name}}</strong>
+            <em class="item-sub">{{subtitle}}</em>
+          </span>
+          <span class="item-rank rank-{{rank}}">{{rank}}</span>
+          <span class="item-price">{{priceLabel}}</span>
+          <span class="item-shine" aria-hidden="true"></span>
+        </button>
+        {{else}}
+        <div class="dnd-shops-empty">
+          <i class="fa-solid fa-box-open"></i>
+          {{#if isGM}}
+          <span>{{localize "DNDSHOPS.NoInventory"}}</span>
+          {{else}}
+          <span>No items in stock for this category.</span>
+          {{/if}}
+        </div>
+        {{/each}}
+      </div>
+
+      {{!-- Item Detail --}}
+      <aside class="dnd-shops-detail">
+        {{#if selectedItem}}
+        <div class="detail-inner">
+          <div class="detail-sku">SKU · {{selectedItem.sku}}</div>
+          <div class="detail-img-wrap">
+            <img class="detail-img" src="{{selectedItem.img}}" alt="{{selectedItem.name}}" />
+            <div class="detail-img-glow" style="background: radial-gradient(circle, var(--dnd-active-cat, #ff176e) 0%, transparent 70%)"></div>
+          </div>
+          <h3 class="detail-name">{{selectedItem.name}}</h3>
+          <div class="detail-price">{{selectedItem.priceLabel}}</div>
+
+          <div class="dnd-shops-stats">
+            <div class="stat-cell">
+              <span class="stat-label">RANK</span>
+              <b class="stat-value rank-{{selectedItem.rank}}">{{selectedItem.rank}}</b>
+            </div>
+            <div class="stat-cell">
+              <span class="stat-label">STOCK</span>
+              <b class="stat-value">{{selectedItem.stockLabel}}</b>
+            </div>
+            <div class="stat-cell">
+              <span class="stat-label">OWNED</span>
+              <b class="stat-value">{{selectedItem.owned}}</b>
+            </div>
+            <div class="stat-cell">
+              <span class="stat-label">TYPE</span>
+              <b class="stat-value">{{selectedItem.type}}</b>
+            </div>
+          </div>
+
+          <p class="detail-desc">{{selectedItem.description}}</p>
+
+          <div class="detail-actions">
+            {{#if selectedItem.canRemove}}
+            <button type="button" class="dnd-shop-remove btn-icon" title="Remove from shop">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+            {{/if}}
+            {{#if buyMode}}
+            <button type="button" class="dnd-shop-add btn-primary">
+              <i class="fa-solid fa-cart-plus"></i>
+              <span>{{localize "DNDSHOPS.ConfirmPurchase"}}</span>
+              <span class="btn-shimmer" aria-hidden="true"></span>
+            </button>
+            {{else}}
+            <button type="button" class="dnd-shop-add btn-primary btn-sell">
+              <i class="fa-solid fa-sack-dollar"></i>
+              <span>{{localize "DNDSHOPS.Sell"}}</span>
+              <span class="btn-shimmer" aria-hidden="true"></span>
+            </button>
+            {{/if}}
+          </div>
+        </div>
+        {{else}}
+        <div class="detail-empty">
+          <i class="fa-solid fa-hand-pointer"></i>
+          <span>Select an item to preview</span>
+        </div>
+        {{/if}}
+      </aside>
+
+    </div>
+  </section>
+
+  {{!-- ── RIGHT CART ────────────────────────────────────────────────── --}}
+  <aside class="dnd-shops-cart">
+    <header class="cart-header">
+      <span class="cart-title">
+        <i class="fa-solid fa-cart-shopping"></i>
+        {{localize "DNDSHOPS.Cart"}}
+      </span>
+      <span class="cart-badge {{#if cartCount}}has-items{{/if}}">{{cartCount}}</span>
+    </header>
+
+    <div class="dnd-shops-cart-list">
+      {{#each cart}}
+      <div class="dnd-shops-cart-row" data-id="{{id}}">
+        <img class="cart-img" src="{{img}}" alt="" />
+        <div class="cart-row-body">
+          <b class="cart-row-name">{{name}}</b>
+          <em class="cart-row-line">{{lineLabel}}</em>
+        </div>
+        <div class="cart-row-controls">
+          <button type="button" class="cart-btn" data-action="dec" title="Less">−</button>
+          <span class="cart-qty">{{qty}}</span>
+          <button type="button" class="cart-btn" data-action="inc" title="More">+</button>
+        </div>
+        <button type="button" class="cart-remove" data-action="remove" title="Remove">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      {{else}}
+      <div class="dnd-shops-cart-empty">
+        <i class="fa-solid fa-ghost"></i>
+        <span>{{localize "DNDSHOPS.EmptyCart"}}</span>
+      </div>
+      {{/each}}
+    </div>
+
+    <footer class="cart-footer">
+      <div class="cart-total-row">
+        <span class="cart-total-label">{{localize "DNDSHOPS.Total"}}</span>
+        <b class="cart-total-value">{{totalLabel}}</b>
+      </div>
+      <button type="button" class="dnd-shop-confirm btn-confirm {{#unless cartCount}}is-disabled{{/unless}}">
+        {{#if buyMode}}
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span>{{localize "DNDSHOPS.ConfirmPurchase"}}</span>
+        {{else}}
+          <i class="fa-solid fa-sack-dollar"></i>
+          <span>{{localize "DNDSHOPS.ConfirmSale"}}</span>
+        {{/if}}
+        <span class="btn-shimmer" aria-hidden="true"></span>
+      </button>
+    </footer>
+  </aside>
+
+  {{!-- ── TOAST CONTAINER ─────────────────────────────────────────── --}}
+  <div class="dnd-shops-toasts" aria-live="polite"></div>
+
+</div>
+{{/if}}
