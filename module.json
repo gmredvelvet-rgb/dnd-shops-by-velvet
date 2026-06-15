@@ -42,7 +42,7 @@
       "path": "lang/es.json"
     }
   ],
-  "manifest": "",
-  "download": "",
-  "url": ""
+  "manifest": "https://raw.githubusercontent.com/gmredvelvet-rgb/dnd-shops-by-velvet/main/module.json",
+  "download": "https://github.com/gmredvelvet-rgb/dnd-shops-by-velvet/releases/latest/download/module.zip",
+  "url": "https://github.com/gmredvelvet-rgb/dnd-shops-by-velvet"
 }
