@@ -34,7 +34,7 @@ export class DndShopsLicenseClient {
   #tier             = 'none';
   #heartbeatTimer   = null;
   #lastHeartbeat    = 0;
-  #gracePeriodMs    = 5 * 60 * 1000;
+  #gracePeriodMs    = 30 * 60 * 1000;
   #degraded         = false;
   #rsaPublicKey     = null;
 

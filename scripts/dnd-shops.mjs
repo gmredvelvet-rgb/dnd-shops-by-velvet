@@ -300,7 +300,13 @@ class DnDShopsApplication extends Application {
       ?.addEventListener("input", e => {
         this.query = e.currentTarget.value;
         this.selectedId = null;
-        this.render();
+        // Debounce: wait 250ms after last keystroke, then re-render and restore focus
+        clearTimeout(this._searchTimer);
+        this._searchTimer = setTimeout(async () => {
+          await this.render();
+          const inp = this.element?.[0]?.querySelector(".dnd-shops-search-input");
+          if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+        }, 250);
       });
 
     el.querySelector(".dnd-shops-search-clear")
@@ -814,7 +820,7 @@ function firstOwnedCharacter() {
 }
 
 function moduleBase() {
-  return game.modules.get(MODULE_ID)?.url ?? `modules/${MODULE_ID}`;
+  return `modules/${MODULE_ID}`;
 }
 
 async function loadShopData() {
