@@ -2,7 +2,7 @@
   "id": "dnd-shops",
   "title": "D&D Shops: RPG Interactive Markets",
   "description": "An RPG-inspired interactive shop interface for the D&D5e system in Foundry VTT.",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "compatibility": {
     "minimum": "13.347",
     "verified": "14"
