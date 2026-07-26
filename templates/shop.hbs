@@ -12,6 +12,20 @@
     </button>
   </div>
 </div>
+{{else if dataUnavailable}}
+<div class="dnd-shops-shell dnd-shops-unlicensed-screen">
+  <div class="dnd-shops-unlock-wrap">
+    <div class="dnd-shops-unlock-icon">⚠</div>
+    <h2 class="dnd-shops-unlock-title">D&amp;D Shops</h2>
+    <p class="dnd-shops-unlock-msg">
+      Could not load shop data from the server. The server may be temporarily unavailable — please try again in a moment.
+    </p>
+    <button type="button" id="dnd-shops-retry-btn" class="dnd-shops-unlock-btn">
+      <i class="fa-solid fa-rotate-right"></i>
+      Retry
+    </button>
+  </div>
+</div>
 {{else}}
 <div class="dnd-shops-shell" data-mode="{{mode}}" data-theme="{{theme}}">
 

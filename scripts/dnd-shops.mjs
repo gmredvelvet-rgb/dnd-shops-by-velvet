@@ -176,7 +176,12 @@ class DnDShopsApplication extends Application {
   /* ── DATA ───────────────────────────────────────────────────── */
   async getData() {
     const data = await loadShopData();
-    if (!data) return { unlicensed: true };
+    if (!data) {
+      if (game.user.isGM && DndShopsLicenseClient.instance.isLicensed) {
+        return { dataUnavailable: true };
+      }
+      return { unlicensed: true };
+    }
 
     const actors = game.actors
       .filter(a => a.type === "character" && a.testUserPermission(game.user, "OWNER"))
@@ -253,6 +258,12 @@ class DnDShopsApplication extends Application {
         btn.innerHTML = '<i class="fa-brands fa-patreon"></i> Connect Patreon'; btn.disabled = false;
         ui.notifications?.error(`D&D Shops: ${e.message}`);
       }
+    });
+
+    /* Data unavailable screen — retry button */
+    el.querySelector("#dnd-shops-retry-btn")?.addEventListener("click", () => {
+      shopData = undefined;
+      this.render();
     });
 
     if (el.querySelector(".dnd-shops-unlicensed-screen")) return;
