@@ -64,7 +64,15 @@ export class DndShopsLicenseClient {
         await this.#doRefresh();
         this.#startHeartbeat();
         return true;
-      } catch {
+      } catch (e) {
+        // A transient outage must never destroy a valid licence: keep the
+        // credentials so the heartbeat can recover once the server is back.
+        // The unconditional clear here meant that loading a world while
+        // offline cost the GM their licence and a full re-authorisation.
+        if (this.#isTransient(e)) {
+          this.#startHeartbeat();
+          return false;
+        }
         this.#clearStoredTokens();
       }
     }
@@ -82,7 +90,10 @@ export class DndShopsLicenseClient {
   get isLicensed() { return this.#tier !== 'none' && !this.#degraded; }
 
   async startOAuth() {
-    const { url } = await this.#apiCall('/oauth/start', { origin: globalThis.location.origin });
+    const { url } = await this.#apiCall('/oauth/start', {
+      origin:   globalThis.location.origin,
+      moduleId: MODULE_ID
+    });
     const popup   = window.open(url, 'dnd-shops-patreon-auth', 'width=600,height=700,popup=yes');
 
     return new Promise((resolve, reject) => {
@@ -113,10 +124,14 @@ export class DndShopsLicenseClient {
   }
 
   async activateWithCode(authCode) {
+    // Without this the server fell back to 'vnd-enhanced', filing this module's
+    // own installation id under VND Enhanced — where it competed for that
+    // module's 2 slots and evicted a real one.
     const result = await this.#apiCall('/oauth/exchange', {
       authCode,
       installationId:  this.#installationId,
-      fingerprintHash: this.#fingerprint
+      fingerprintHash: this.#fingerprint,
+      moduleId:        MODULE_ID
     });
 
     this.#storeTokens(result.accessToken, result.refreshToken, result.expiresIn, result.tier, result.features);
@@ -226,7 +241,26 @@ export class DndShopsLicenseClient {
     } catch { return 'no-canvas'; }
   }
 
+  // Serialises token rotation. The server revokes the old refresh token the
+  // moment it is used and treats a second presentation as reuse — a critical
+  // SECURITY_VIOLATION that revokes the whole token family. Two overlapping
+  // refreshes were enough to trigger it and push the GM back through Patreon.
+  #refreshInFlight = null;
+
   async #doRefresh() {
+    this.#refreshInFlight ??= this.#doRefreshOnce()
+      .finally(() => { this.#refreshInFlight = null; });
+    return this.#refreshInFlight;
+  }
+
+  // Transport hiccups are safe to retry and must never destroy tokens;
+  // anything else is a definitive verdict from the licence server.
+  #isTransient(e) {
+    if (!(e instanceof LicenseError)) return true;
+    return ['NETWORK_ERROR', 'INTERNAL_ERROR', 'RATE_LIMITED', 'NOT_FOUND', 'API_ERROR'].includes(e.code);
+  }
+
+  async #doRefreshOnce() {
     const result = await this.#apiCall('/token/refresh', {
       refreshToken:    this.#refreshToken,
       fingerprintHash: this.#fingerprint
@@ -251,16 +285,43 @@ export class DndShopsLicenseClient {
 
   async #doHeartbeat() {
     try {
-      const result = await this.#apiCall('/heartbeat', {
-        installationId:  this.#installationId,
-        fingerprintHash: this.#fingerprint
-      });
-      this.#storeTokens(result.accessToken, this.#refreshToken, result.expiresIn, result.tier, result.features);
-      this.#lastHeartbeat = Date.now();
-      this.#degraded = false;
+      await this.#heartbeatOnce();
     } catch {
-      this.#handleHeartbeatFailure();
+      // /heartbeat needs a live access token (1h TTL). After a laptop sleep or
+      // a long outage it is expired and every beat would 401 forever, so
+      // recover through the refresh flow before believing the rejection.
+      try {
+        if (!this.#refreshToken) throw new LicenseError('no refresh token', 'UNAUTHORIZED');
+        await this.#doRefresh();
+        await this.#heartbeatOnce();
+      } catch (e2) {
+        if (!this.#isTransient(e2)) {
+          // A definitive verdict: subscription ended, slot released, or the
+          // installation was revoked. The shop is a paid feature, so it closes
+          // — but only on an explicit verdict, never on a network blip. Before
+          // this the tokens were kept forever and a cancelled patron kept the
+          // shop open indefinitely off the cached catalogue.
+          this.#clearStoredTokens();
+          this.#stopHeartbeat();
+          this.#degraded = true;
+          if (game.user?.isGM) {
+            ui.notifications?.warn('D&D Shops: Patreon licence is no longer valid. Reconnect to reopen the shop.');
+          }
+          return;
+        }
+        this.#handleHeartbeatFailure();
+      }
     }
+  }
+
+  async #heartbeatOnce() {
+    const result = await this.#apiCall('/heartbeat', {
+      installationId:  this.#installationId,
+      fingerprintHash: this.#fingerprint
+    });
+    this.#storeTokens(result.accessToken, this.#refreshToken, result.expiresIn, result.tier, result.features);
+    this.#lastHeartbeat = Date.now();
+    this.#degraded = false;
   }
 
   #handleHeartbeatFailure() {
@@ -296,7 +357,14 @@ export class DndShopsLicenseClient {
     }
 
     const url  = `${API_BASE}${endpoint}`;
-    const resp = await fetch(url, init);
+    // fetch() rejects on DNS failure / offline / server down — a transport
+    // problem, never an auth verdict. Callers must not burn tokens over it.
+    let resp;
+    try {
+      resp = await fetch(url, init);
+    } catch {
+      throw new LicenseError('License server unreachable', 'NETWORK_ERROR');
+    }
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ error: 'Network error', code: 'NETWORK_ERROR' }));
